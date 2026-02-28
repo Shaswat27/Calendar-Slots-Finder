@@ -1,0 +1,24 @@
+Role: You are an expert Full-Stack Developer. Goal: Build a "Calendar Free-Slot Generator" for Outlook/Office365 using a public ICS link.
+1. Tech Stack:
+Frontend: React with Tailwind CSS and shadcn/ui components (clean, dark-mode, "Notion-like" aesthetic).
+Backend: Node.js/Express server (to act as a proxy for fetching the ICS link and avoiding CORS issues).
+Libraries: node-ical for parsing, luxon for timezone and date math, and an LLM (OpenAI or Google Gemini) for final formatting.
+2. User Interface (UI):
+Input Field: A prominent text box for the "Outlook Public ICS Link."
+Settings Sidebar: * Working Days: Multi-select toggles (Mon-Sun, default to Mon-Fri).
+Working Hours: A range slider (default 9:00 AM to 6:00 PM).
+Timezone: A dropdown that auto-detects the browser's timezone using Intl.DateTimeFormat().resolvedOptions().timeZone.
+Prompt Box: A text area for natural language requests (default: "Give me my free slots for the next 5 working days").
+Action Button: A "Generate Free Slots" button.
+Output Area: A clean code-block style container with a "Copy to Clipboard" button.
+3. Logic & Workflow:
+Fetch: The backend must fetch the .ics link. If the fetch fails, show a helpful error message.
+Parse & Shift: Convert all 'BUSY' events from the ICS file into the user's selected Timezone using luxon.
+Gap Calculation: * Generate "Working Windows" for the requested days based on the User's settings (e.g., Monday 9 AM - 6 PM).
+Subtract all 'BUSY' events from these windows to find the 'FREE' gaps.
+Ignore any busy events outside of the working hours.
+LLM Integration: * Send the raw list of FREE gaps (with dates and times) to the LLM.
+LLM Instructions: "Format these free slots into a bulleted list exactly like this: 'Monday (2 Mar): 11:30-1:30 p.m., 3-5 p.m.' Each day should be its own bullet. Use 12-hour AM/PM format. Only output the list, no conversational filler."
+4. Final Polish:
+Add a "Loading" spinner while the ICS is being fetched and the LLM is thinking.
+Ensure the UI is responsive and looks professional.
