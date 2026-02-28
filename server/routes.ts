@@ -9,8 +9,7 @@ import OpenAI from "openai";
 
 // Using OpenAI via Replit AI Integrations
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function registerRoutes(
@@ -62,15 +61,18 @@ export async function registerRoutes(
       
       // Filter out busy events
       for (const event of Object.values(events)) {
-        if (event.type !== 'VEVENT') continue;
+        // Explicitly check that event exists and is a VEVENT
+        if (!event || event.type !== 'VEVENT') continue;
+
+        // Cast to 'any' to bypass library type limitations safely
+        const vevent = event as any;
+
+        // Verify start and end dates exist
+        if (!vevent.start || !vevent.end) continue;
         
-        let eventStart = DateTime.fromJSDate(event.start as Date).setZone(input.timezone);
-        let eventEnd = DateTime.fromJSDate(event.end as Date).setZone(input.timezone);
+        const eventStart = DateTime.fromJSDate(vevent.start as Date).setZone(input.timezone);
+        const eventEnd = DateTime.fromJSDate(vevent.end as Date).setZone(input.timezone);
         
-        // Handle all-day events or recurring events if possible
-        // For simplicity and to match common needs, we process start/end
-        
-        // Subtract event from freeWindows
         let newWindows: { start: DateTime, end: DateTime }[] = [];
         
         for (const window of freeWindows) {
