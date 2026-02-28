@@ -7,7 +7,7 @@ import ical from "node-ical";
 import { DateTime } from "luxon";
 import OpenAI from "openai";
 
-// Using OpenAI via Replit AI Integrations
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -106,7 +106,7 @@ Important:
 - If no gaps fit the user's criteria, respond simply stating that.`;
 
       const aiResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini", // fallback model if needed, but Replit supports gpt-5.2 and gpt-4o-mini via AI integrations.
+        model: "gpt-4o-mini", 
         messages: [
           { role: "system", content: systemInstructions },
           { role: "user", content: `User Request: ${input.prompt}\n\nAvailable Gaps:\n${rawGaps}` }
