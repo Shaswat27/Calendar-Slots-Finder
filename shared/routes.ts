@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { generateSlotsSchema, generateSlotsResponseSchema } from './schema';
+import { generateSlotsSchema, generateSlotsResponseSchema } from './schema.js';
 
 export const errorSchemas = {
   validation: z.object({
