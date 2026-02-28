@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { usageLogs, type InsertUsageLog, type UsageLog } from "@shared/schema.js";
+import { usageLogs, type InsertUsageLog, type UsageLog } from "../shared/schema.js";
 
 export interface IStorage {
   logUsage(log: InsertUsageLog): Promise<UsageLog>;

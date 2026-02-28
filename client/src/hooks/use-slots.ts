@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { api, type GenerateSlotsInput, type GenerateSlotsResponse } from "@shared/routes";
+import { api, type GenerateSlotsInput, type GenerateSlotsResponse } from "../../../shared/routes.js";
 import { useToast } from "@/hooks/use-toast";
 
 export function useGenerateSlots() {
