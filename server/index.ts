@@ -59,12 +59,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Move the initialization into a named function or keep it at the top level
-// but ensure the 'app' is the default export.
-
+/**
+ * Initialization Logic
+ * * We use a guard to check if we are running in a Vercel environment (Local or Cloud).
+ * If on Vercel, we only register routes. Vercel's runtime handles the server start.
+ */
 const init = async () => {
+  // 1. Register API and Socket routes
   await registerRoutes(httpServer, app);
 
+  // 2. Global Error Handler
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -73,23 +77,38 @@ const init = async () => {
     return res.status(status).json({ message });
   });
 
+  // Detect if running under Vercel CLI (Local Dev) or Vercel Cloud (Production)
+  const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION;
+
   if (process.env.NODE_ENV === "production") {
+    // Standard production (non-serverless) or Vercel production static handling
     serveStatic(app);
-  } else {
-    // Only use 'vite' in development
+  } else if (!isVercel) {
+    /**
+     * LOCAL DEVELOPMENT (Non-Vercel)
+     * e.g., 'npm run dev'
+     */
     const { setupVite } = await import("./vite.js"); 
     await setupVite(httpServer, app);
     
-    // Only call .listen() in development. 
-    // Vercel handles the port/listening in production.
     const port = parseInt(process.env.PORT || "5000", 10);
     httpServer.listen({ port, host: "127.0.0.1" }, () => {
       log(`serving on port ${port}`);
     });
+  } else {
+    /**
+     * VERCEL DEV ENVIRONMENT
+     * We don't call .listen() here. Vercel wraps the 'app' export 
+     * and manages the port itself.
+     */
+    log("Vercel environment detected; skipping manual listener.");
   }
 };
 
+// Start the async initialization
 init();
 
-// CRITICAL: Export the app for Vercel
+/**
+ * CRITICAL: Vercel requires the Express instance as the default export.
+ */
 export default app;
