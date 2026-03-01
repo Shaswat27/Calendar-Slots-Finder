@@ -1,17 +1,21 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
-import { serveStatic } from "./static.js";
 import { createServer } from "http";
+import path from "path";
 
 const app = express();
 const httpServer = createServer(app);
 
+console.log("!!! Server script loaded by Vercel !!!");
+
+// Types for raw body (useful for webhooks if you add them later)
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
   }
 }
 
+// 1. GLOBAL MIDDLEWARE
 app.use(
   express.json({
     verify: (req, _res, buf) => {
@@ -19,9 +23,9 @@ app.use(
     },
   }),
 );
-
 app.use(express.urlencoded({ extended: false }));
 
+// Helper for formatted logging
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -29,10 +33,10 @@ export function log(message: string, source = "express") {
     second: "2-digit",
     hour12: true,
   });
-
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// 2. REQUEST LOGGING MIDDLEWARE
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -51,24 +55,20 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       log(logLine);
     }
   });
-
   next();
 });
 
-/**
- * Initialization Logic
- * * We use a guard to check if we are running in a Vercel environment (Local or Cloud).
- * If on Vercel, we only register routes. Vercel's runtime handles the server start.
- */
-const init = async () => {
-  // 1. Register API and Socket routes
+// 3. CORE INITIALIZATION
+// We separate the route registration from the server listening logic
+// to ensure Vercel can see the routes immediately upon import.
+const setupApp = async () => {
+  // Register API routes immediately
   await registerRoutes(httpServer, app);
 
-  // 2. Global Error Handler
+  // Global Error Handler
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
@@ -77,36 +77,40 @@ const init = async () => {
     return res.status(status).json({ message });
   });
 
-  // Detect if running under Vercel CLI (Local Dev) or Vercel Cloud (Production)
-  const isVercel = process.env.VERCEL === "1" || process.env.NOW_REGION;
+  const isVercel = process.env.VERCEL === "1" || !!process.env.NOW_REGION;
+  const isDev = process.env.NODE_ENV === "development" && !isVercel;
 
-  if (process.env.NODE_ENV === "production") {
-    // Standard production (non-serverless) or Vercel production static handling
-    serveStatic(app);
-  } else if (!isVercel) {
-    /**
-     * LOCAL DEVELOPMENT (Non-Vercel)
-     * e.g., 'npm run dev'
-     */
-    const { setupVite } = await import("./vite.js"); 
+  if (isDev) {
+    // Standard local development (npm run server)
+    const { setupVite } = await import("./vite.js");
     await setupVite(httpServer, app);
-    
+
     const port = parseInt(process.env.PORT || "5000", 10);
-    httpServer.listen({ port, host: "127.0.0.1" }, () => {
-      log(`serving on port ${port}`);
+    httpServer.listen({ port, host: "0.0.0.0" }, () => {
+      log(`Serving on port ${port} (Local Dev Mode)`);
     });
   } else {
-    /**
-     * VERCEL DEV ENVIRONMENT
-     * We don't call .listen() here. Vercel wraps the 'app' export 
-     * and manages the port itself.
-     */
-    log("Vercel environment detected; skipping manual listener.");
+    // Production or Vercel environment
+    // const publicPath = path.join(process.cwd(), "dist", "public");
+    // app.use(express.static(publicPath));
+
+    // ONLY catch-all for non-API routes to allow the SPA to handle routing
+    //app.get(/^(?!\/api).+/, (req, res) => {
+    //  res.sendFile(path.join(publicPath, "index.html"), (err) => {
+    //    if (err) {
+          // If the file doesn't exist (common in local dev), just move to the next handler
+    //      res.status(404).send("Frontend build not found. If on local, ensure you're using the Vercel-provided port.");
+    //    }
+    //  });
+    //  });
+    log("Vercel runtime detected, skipping local listener.");
   }
 };
 
-// Start the async initialization
-init();
+// Fire and forget the setup - the 'app' export remains available for Vercel
+setupApp().catch((err) => {
+  console.error("Failed to initialize server:", err);
+});
 
 /**
  * CRITICAL: Vercel requires the Express instance as the default export.

@@ -12,7 +12,7 @@ export function useGenerateSlots() {
       if (!validated.success) {
         throw new Error(validated.error.errors[0].message);
       }
-
+      
       const res = await fetch(api.slots.generate.path, {
         method: api.slots.generate.method,
         headers: { "Content-Type": "application/json" },

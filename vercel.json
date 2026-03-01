@@ -1,8 +1,10 @@
 {
   "version": 2,
+  "framework": "vite",
+  "devCommand": "vite --port $PORT",
   "builds": [
     {
-      "src": "server/index.ts",
+      "src": "api/index.ts",
       "use": "@vercel/node"
     },
     {
@@ -12,7 +14,25 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index.ts" },
-    { "source": "/(.*)", "destination": "/$1" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/src/(.*)",
+      "destination": "/client/src/$1"
+    },
+    {
+      "source": "/@vite/(.*)",
+      "destination": "/@vite/$1"
+    },
+    {
+      "source": "/@react-refresh",
+      "destination": "/@react-refresh"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/client/index.html"
+    }
   ]
 }
