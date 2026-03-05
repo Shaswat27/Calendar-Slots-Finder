@@ -66,6 +66,7 @@ app.use((req, res, next) => {
 // to ensure Vercel can see the routes immediately upon import.
 const setupApp = async () => {
   // Register API routes immediately
+  console.log("Registering routes...");
   await registerRoutes(httpServer, app);
 
   // Global Error Handler
@@ -86,7 +87,8 @@ const setupApp = async () => {
     await setupVite(httpServer, app);
 
     const port = parseInt(process.env.PORT || "5000", 10);
-    httpServer.listen({ port, host: "0.0.0.0" }, () => {
+    console.log(`Starting local development server on port ${port}...`);
+    httpServer.listen({ port, host: "127.0.0.1" }, () => {
       log(`Serving on port ${port} (Local Dev Mode)`);
     });
   } else {
